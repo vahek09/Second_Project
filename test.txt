@@ -1,0 +1,58 @@
+Input the action (add, remove, import, export, ask, exit, log, hardest card, reset stats):
+add
+The card:
+France
+The definition of the card:
+Paris
+The pair ("France":"Paris") has been added.
+Input the action (add, remove, import, export, ask, exit, log, hardest card, reset stats):
+add
+The card:
+England
+The definition of the card:
+London
+The pair ("England":"London") has been added.
+Input the action (add, remove, import, export, ask, exit, log, hardest card, reset stats):
+add
+The card:
+Armenai
+The definition of the card:
+Yerevan
+The pair ("Armenai":"Yerevan") has been added.
+Input the action (add, remove, import, export, ask, exit, log, hardest card, reset stats):
+ask
+How many times to ask?
+7
+Print the definition of "England":
+London
+Correct!
+Print the definition of "France":
+P
+Wrong. The right answer is "Paris".
+Print the definition of "Armenai":
+Yere
+Wrong. The right answer is "Yerevan".
+Print the definition of "England":
+London
+Correct!
+Print the definition of "France":
+p
+Wrong. The right answer is "Paris".
+Print the definition of "Armenai":
+p
+Wrong. The right answer is "Yerevan".
+Print the definition of "England":
+London
+Correct!
+Input the action (add, remove, import, export, ask, exit, log, hardest card, reset stats):
+hardest card
+Input the action (add, remove, import, export, ask, exit, log, hardest card, reset stats):
+hardest card
+Input the action (add, remove, import, export, ask, exit, log, hardest card, reset stats):
+hardest card
+Input the action (add, remove, import, export, ask, exit, log, hardest card, reset stats):
+log
+File name:
+test.txt
+The log has been saved.
+Log saved on: Thu Aug 01 14:58:23 AMT 2024

@@ -5,20 +5,9 @@ public class Main {
     private static final Map<String, Flashcard> flashcards = new LinkedHashMap<>();
     private static final ArrayList<String> log = new ArrayList<>();
 
-    /** Flashcard class to hold definition and mistake count */
-    private static class Flashcard {
-        String definition;
-        int mistakes;
 
 
-
-        Flashcard(String definition) {
-            this.definition = definition;
-            this.mistakes = 0;
-        }
-    }
-
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
 
         checkArgs(args,false);
@@ -66,7 +55,7 @@ public class Main {
     /**
      * Checking Arguments.
      */
-    private static void checkArgs(String[] args, boolean exit) {
+    private static void checkArgs(String[] args, boolean exit) throws Exception {
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("-import") && !exit && i + 1 < args.length) {
                 importCards(args[i + 1]);
@@ -139,43 +128,53 @@ public class Main {
      * If file does not exist create a new one, and add there.If a card with the same term as an imported
      * card already exists, its definition is updated with the imported card's definition.
      * */
-    private static void importCards(Scanner scanner) {
+    private static void importCards(Scanner scanner) throws Exception {
         logAndPrint("File name:");
         String fileName = scanner.nextLine().trim();
         log.add(fileName);
-        importCards(fileName);
+        try {
+            importCards(fileName);
+        } catch (Exception e) {
+            logAndPrint("File not found: " + fileName);
+            throw new Exception(e.getMessage());
+        }
     }
     /**
      * Imports cards from a file and adds them to the existing list of cards,if file doesn't exist, create it.
      * If a card with the same term as an imported
      * card already exists, its definition is updated with the imported card's definition.
      */
-    private static void importCards(String fileName) {
+    private static void importCards(String fileName) throws Exception {
         logAndPrint("File name:");
         log.add(fileName);
         File file = new File(fileName);
         if (!file.exists()) {
             logAndPrint("File not found.");
-            return;
+            throw new FileNotFoundException("File not found: " + fileName);
         }
-
         int count = 0;
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(":", 3);
-                if (parts.length == 3) {
+                if (parts.length != 3) {
+                    throw new IllegalArgumentException("Invalid line format: " + line);
+                }
                     String term = parts[0].trim();
                     String definition = parts[1].trim();
                     int mistakes = Integer.parseInt(parts[2].trim());
+
                     Flashcard card = new Flashcard(definition);
                     card.mistakes = mistakes;
                     flashcards.put(term, card);
                     count++;
-                }
             }
-        } catch (IOException e) {
-            logAndPrint("Error reading the file.");
+        } catch (FileNotFoundException e) {
+            logAndPrint("Error: File not found or could not be created.");
+            throw new FileNotFoundException(e.getMessage());
+        } catch (Exception e) {
+            logAndPrint("Error writing to the file: ");
+            throw new Exception(e.getMessage());
         }
         logAndPrint(count + " cards have been loaded.");
     }
@@ -183,17 +182,22 @@ public class Main {
     /**
      * Export cards to a file and adds them, when there is "-export" in argument input,if file doesn't exist, create it.
      */
-    private static void exportCards(Scanner scanner) {
+    private static void exportCards(Scanner scanner) throws FileNotFoundException {
         logAndPrint("File name:");
         String fileName = scanner.nextLine().trim();
         log.add(fileName);
-        exportCards(fileName);
+        try {
+            exportCards(fileName);
+        } catch (Exception e) {
+            logAndPrint("File not found: " + fileName);
+            throw new FileNotFoundException(e.getMessage());
+        }
     }
 
     /**
      * Export cards to a file and adds them,if file doesn't exist, create it.
      */
-    private static void exportCards(String filename) {
+    private static void exportCards(String filename) throws IOException{
         logAndPrint("File name:");
         log.add(filename);
         int count = 0;
@@ -202,9 +206,13 @@ public class Main {
                 writer.println(entry.getKey() + ":" + entry.getValue().definition + ":" + entry.getValue().mistakes);
                 count++;
             }
+        }catch (FileNotFoundException e) {
+        logAndPrint("Error: File not found or could not be created.");
+            throw new FileNotFoundException(e.getMessage());
         } catch (IOException e) {
-            logAndPrint("Error writing to the file.");
-        }
+        logAndPrint("Error writing to the file: ");
+        throw new IOException(e.getMessage());
+         }
         logAndPrint(count + " cards have been saved.");
     }
 
@@ -212,34 +220,34 @@ public class Main {
      * Asks the user to provide the definitions of a certain number of flashcards
      * and checks the correctness of the provided definitions against the expected definitions.
      */
-    private static void askDefinitions(Scanner scanner) {
+    private static void askDefinitions(Scanner scanner){
         logAndPrint("How many times to ask?");
-        int count = Integer.parseInt(scanner.nextLine().trim());
+       int count = Integer.parseInt(scanner.nextLine().trim());
         log.add(String.valueOf(count));
 
         List<String> terms = new ArrayList<>(flashcards.keySet());
-        Collections.shuffle(terms);
+         Collections.shuffle(terms);
+
+        Map<String, String> reverseFlashcards = new HashMap<>();
+        for (Map.Entry<String, Flashcard> entry : flashcards.entrySet()) {
+            reverseFlashcards.put(entry.getValue().definition, entry.getKey());
+        }
 
         for (int i = 0; i < count; i++) {
             String term = terms.get(i % terms.size());
             String correctDefinition = flashcards.get(term).definition;
 
             logAndPrint("Print the definition of \"" + term + "\":");
-            String userDefinition = scanner.nextLine().trim();
+            String userDefinition = scanner.nextLine();
             log.add(userDefinition);
 
-            if (userDefinition.equals(correctDefinition)) {
+            if (correctDefinition.equals(userDefinition)){
                 logAndPrint("Correct!");
-            } else {
-                boolean found = false;
-                for (Map.Entry<String, Flashcard> otherEntry : flashcards.entrySet()) {
-                    if (userDefinition.equals(otherEntry.getValue().definition)) {
-                        logAndPrint("Wrong. The right answer is \"" + correctDefinition + "\", but your definition is correct for \"" + otherEntry.getKey() + "\".");
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
+            }else{
+                String correctTerm = reverseFlashcards.get(userDefinition);
+                if (correctTerm != null){
+                    logAndPrint("Wrong. The right answer is \"" + correctDefinition + "\", but your definition is correct for \"" + correctTerm + "\".");
+                } else {
                     logAndPrint("Wrong. The right answer is \"" + correctDefinition + "\".");
                 }
                 flashcards.get(term).mistakes++;
@@ -251,12 +259,11 @@ public class Main {
         logAndPrint("File name:");
         String fileName = scanner.nextLine().trim();
         log.add(fileName);
-        logAndPrint("The log has been saved."); // Add this line before saving the log file
+        logAndPrint("The log has been saved.");
         try (PrintWriter writer = new PrintWriter(new FileWriter(fileName))) {
             for (String entry : log) {
                 writer.println(entry);
             }
-            // Add a timestamp at the end of the log file
             writer.println("Log saved on: " + new Date());
         } catch (IOException e) {
             logAndPrint("Error writing to the file: " + e.getMessage());
@@ -285,10 +292,29 @@ public class Main {
             }
         }
 
-        for (int i = 1; i <= 5; i++) {
-            //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-            // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-            System.out.println("i = " + i);
+        if (maxMistakes == 0) {
+            logAndPrint("There are no cards with errors.");
+        } else {
+            List<String> hardestCards = new ArrayList<>();
+            for (Map.Entry<String, Flashcard> entry : flashcards.entrySet()) {
+                if (entry.getValue().mistakes == maxMistakes) {
+                    hardestCards.add(entry.getKey());
+                }
+            }
+
+            StringBuilder formattedCards = new StringBuilder();
+            for (int i = 0; i < hardestCards.size(); i++) {
+                formattedCards.append("\"").append(hardestCards.get(i)).append("\"");
+                if (i < hardestCards.size() - 1) {
+                    formattedCards.append(", ");
+                }
+            }
+
+            if (hardestCards.size() == 1) {
+                logAndPrint(String.format("The hardest card is \"%s\". You have %d errors answering it.", hardestCards.getFirst(), maxMistakes));
+            } else {
+                logAndPrint(String.format("The hardest cards are %s. You have %d errors answering them.", formattedCards, maxMistakes));
+            }
         }
     }
 }
